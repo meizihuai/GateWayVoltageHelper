@@ -124,8 +124,8 @@ namespace 监测网关电压测试程序
                                         string key = kv.Split('=')[0];
                                         string value = kv.Split('=')[1];
                                         if (key == "swnet") gateWayStatusInfo.net = value;
-                                        if (key == "swpower") gateWayStatusInfo.power = value;
-                                        if (key == "lontitude") gateWayStatusInfo.lon = double.Parse(value);
+                                        if (key == "swpow") gateWayStatusInfo.power = value;
+                                        if (key == "longitude") gateWayStatusInfo.lon = double.Parse(value);
                                         if (key == "latitude") gateWayStatusInfo.lat = double.Parse(value);
                                         if (key == "voltage")
                                         {

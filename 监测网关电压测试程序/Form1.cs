@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -50,8 +51,28 @@ namespace 监测网关电压测试程序
             label3.Text = "电源："+ (gateWayStatusInfo.power == "on" ? "开" : "关");
             label4.Text = "电压：" + gateWayStatusInfo.vlotage;
             label5.Text = "GPS：" + "(" + gateWayStatusInfo.lon + "," + gateWayStatusInfo.lat + ")";
+            VlotageWatch(gateWayStatusInfo.vlotage);
         }
+        private void VlotageWatch(double v)
+        {
+            double minV = 10.5;
+            double alarmV = 11;
+            if (v == 0)
+            {
+                label6.Text = "电压为0，不执行关机";
+              //  return;
+            }
+            if (v < minV)
+            {
+                label6.Text = "电压过低，需要关机！";
+              if(checkBox1.Checked)  Process.Start("shutdown.exe", " -s -t 0");
+            }
+            else
+            {
+                label6.Text = "电压正常";
 
+            }
+        }
         private void GateWayVoltageHelper_OnLog(string msg)
         {
             listBox1.Items.Add(msg);
@@ -73,6 +94,11 @@ namespace 监测网关电压测试程序
             richTextBox1.Clear();
             richTextBox1.AppendText("==========" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "=========="+ System.Environment.NewLine);
             richTextBox1.AppendText(msg);
+        }
+
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }
