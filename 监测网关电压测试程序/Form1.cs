@@ -39,7 +39,17 @@ namespace 监测网关电压测试程序
             gateWayVoltageHelper.OnUdpHeartBeat += GateWayVoltageHelper_OnUdpHeartBeat;
             gateWayVoltageHelper.OnUdpVoltageInfo += GateWayVoltageHelper_OnUdpVoltageInfo;
             gateWayVoltageHelper.OnLog += GateWayVoltageHelper_OnLog;
+            gateWayVoltageHelper.OnGateWayStatusInfo += GateWayVoltageHelper_OnGateWayStatusInfo;
             gateWayVoltageHelper.StartWork();
+        }
+
+        private void GateWayVoltageHelper_OnGateWayStatusInfo(GateWayVoltageHelper.GateWayStatusInfo gateWayStatusInfo)
+        {
+            label1.Text = "实时状态：" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            label2.Text = "网络："+ (gateWayStatusInfo.net=="in"?"内":"外");
+            label3.Text = "电源："+ (gateWayStatusInfo.power == "on" ? "开" : "关");
+            label4.Text = "电压：" + gateWayStatusInfo.vlotage;
+            label5.Text = "GPS：" + "(" + gateWayStatusInfo.lon + "," + gateWayStatusInfo.lat + ")";
         }
 
         private void GateWayVoltageHelper_OnLog(string msg)
@@ -54,7 +64,8 @@ namespace 监测网关电压测试程序
 
         private void GateWayVoltageHelper_OnUdpVoltageInfo(string msg)
         {
-            label1.Text = "实时电压：" + msg + "  刷新时间：" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        
+
         }
 
         private void GateWayVoltageHelper_OnUdpHeartBeat(string msg)

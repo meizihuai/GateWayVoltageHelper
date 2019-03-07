@@ -14,7 +14,7 @@ namespace 监测网关电压测试程序
     {
         public int localPort, remotePort;
         public string remoteIp;
-        private IPEndPoint remoteIpEndPoint,localIpEndPoint;
+        private IPEndPoint remoteIpEndPoint, localIpEndPoint;
         private Socket socket;
         private Thread udpServerThread;
         private Thread udpClientThread;
@@ -23,7 +23,17 @@ namespace 监测网关电压测试程序
         public event DlgOnUdpMsg OnUdpHeartBeat;
         public event DlgOnUdpMsg OnUdpVoltageInfo;
         public event DlgOnUdpMsg OnLog;
-        public GateWayVoltageHelper(string remoteIp,int remotePort,int localPort= 4516)
+        public delegate void DlgOnGateWayStatusInfo(GateWayStatusInfo gateWayStatusInfo);
+        public event DlgOnGateWayStatusInfo OnGateWayStatusInfo;
+        public class GateWayStatusInfo
+        {
+            public string net;
+            public string power;
+            public double lon;
+            public double lat;
+            public double vlotage;
+        }
+        public GateWayVoltageHelper(string remoteIp, int remotePort, int localPort = 4516)
         {
             this.localPort = localPort;
             this.remoteIp = remoteIp;
@@ -38,7 +48,7 @@ namespace 监测网关电压测试程序
             OnLog(str);
         }
 
-        public void StartWork(int sleepSecond=5)
+        public void StartWork(int sleepSecond = 5)
         {
             StopWork();
             sleepTimes = sleepSecond * 1000;
@@ -58,7 +68,8 @@ namespace 监测网关电压测试程序
                 {
                     udpClientThread.Abort();
                 }
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
 
             }
@@ -97,8 +108,8 @@ namespace 监测网关电压测试程序
                         if (thisRemoteIp == remoteIp)
                         {
                             tm = Byte2tssmsg(buffer);
-                            Log(tm.datatype + "," + tm.functype+","+tm.canshuqu);
-                            if(tm.datatype=="Data" && tm.functype == "heartbeat")
+                            Log(tm.datatype + "," + tm.functype + "," + tm.canshuqu);
+                            if (tm.datatype == "Data" && tm.functype == "heartbeat")
                             {
                                 string msg = tm.canshuqu;
                                 string str = msg.Replace("<", "").Replace(">", "");
@@ -106,20 +117,30 @@ namespace 监测网关电压测试程序
                                 if (headFunc == "heartbeat")
                                 {
                                     OnUdpHeartBeat(tm.canshuqu);
-                                    string[] paras= str.Split(';');
-                                    foreach(string kv in paras)
+                                    string[] paras = str.Split(';');
+                                    GateWayStatusInfo gateWayStatusInfo = new GateWayStatusInfo();
+                                    foreach (string kv in paras)
                                     {
                                         string key = kv.Split('=')[0];
                                         string value = kv.Split('=')[1];
-                                        if (key == "voltage") OnUdpVoltageInfo(value);
+                                        if (key == "swnet") gateWayStatusInfo.net = value;
+                                        if (key == "swpower") gateWayStatusInfo.power = value;
+                                        if (key == "lontitude") gateWayStatusInfo.lon = double.Parse(value);
+                                        if (key == "latitude") gateWayStatusInfo.lat = double.Parse(value);
+                                        if (key == "voltage")
+                                        {
+                                            OnUdpVoltageInfo(value);
+                                            gateWayStatusInfo.vlotage = double.Parse(value);
+                                        }
                                     }
-                                }  
-                                
-                            }                     
+                                    OnGateWayStatusInfo(gateWayStatusInfo);
+                                }
+
+                            }
                         }
 
                     }
-                  
+
                 }
                 catch (Exception e)
                 {
@@ -148,9 +169,9 @@ namespace 监测网关电压测试程序
                     Log("<Send Err>" + e.ToString());
                 }
             }
-               
+
         }
-       
+
         private struct TssMsg
         {
             public string flag;
@@ -198,7 +219,7 @@ namespace 监测网关电压测试程序
             {
                 tm.canshuqu = canshu;
                 byte[] b = Encoding.Default.GetBytes(tm.canshuqu);
-                tm.canshuquchangdu =(Int16) b.Length;
+                tm.canshuquchangdu = (Int16)b.Length;
                 numofmsg = numofmsg + b.Count();
             }
             if (shuju != null)
@@ -243,20 +264,20 @@ namespace 监测网关电压测试程序
             Array.Copy(BitConverter.GetBytes(ms), 0, by, 68, 2);
             Array.Copy(BitConverter.GetBytes(ms), 0, by, 70, 2);
             Array.Copy(tobyte(tm.deviceID), 0, by, 72, tobyte(tm.deviceID).Length);
-            if(tm.source!=null)  Array.Copy(tobyte(tm.source), 0, by, 82, tobyte(tm.source).Length);
+            if (tm.source != null) Array.Copy(tobyte(tm.source), 0, by, 82, tobyte(tm.source).Length);
             if (tm.destination != null) Array.Copy(tobyte(tm.destination), 0, by, 92, tobyte(tm.destination).Length);
             // CRC
             byte crcInt = getHeadcrc(by);
             Array.Copy(new byte[] { crcInt }, 0, by, 9, 1);
-            byte[] bu = null; 
+            byte[] bu = null;
             if (tm.canshuquchangdu > 0)
                 bu = tobyte(tm.canshuqu);
-            byte[] bk = null ;
+            byte[] bk = null;
             if (tm.shujuquchangdu > 0)
                 bk = tm.shujuqu;
             int k1 = 0;
             int k2 = 0;
-            if (bu!=null)
+            if (bu != null)
                 k1 = bu.Count();
             if (bk != null)
                 k2 = bk.Count();
@@ -298,13 +319,13 @@ namespace 监测网关电压测试程序
         {
             TssMsg tm = new TssMsg();
             try
-            {        
+            {
                 tm.flag = Encoding.Default.GetString(by, 0, 9).TrimEnd('\0');
                 tm.crc = by[9].ToString();
                 tm.lenofmsg = BitConverter.ToInt32(by, 10);
                 tm.ctrl = by[14];
                 tm.xieyibanbenhao = by[15];
-                tm.datatype= Encoding.Default.GetString(by, 16, 16).TrimEnd('\0');
+                tm.datatype = Encoding.Default.GetString(by, 16, 16).TrimEnd('\0');
                 tm.functype = Encoding.Default.GetString(by, 32, 16).TrimEnd('\0');
                 tm.baowenxuhao = BitConverter.ToInt32(by, 48);
                 tm.baotouchangdu = BitConverter.ToInt16(by, 52);
