@@ -60,12 +60,21 @@ namespace 监测网关电压测试程序
             if (v == 0)
             {
                 label6.Text = "电压为0，不执行关机";
-              //  return;
+                return;
             }
             if (v < minV)
             {
                 label6.Text = "电压过低，需要关机！";
-              if(checkBox1.Checked)  Process.Start("shutdown.exe", " -s -t 0");
+                if (checkBox1.Checked)
+                {
+                 
+                    Process.Start("shutdown.exe", " -s -t 1");
+                }
+                else
+                {
+
+                }
+                
             }
             else
             {
